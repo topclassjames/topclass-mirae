@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+model Staff {
+  id           String     @id @default(cuid())
+  username     String     @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         Role       @default(STAFF)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  customers    Customer[]
+}
+
+model Customer {
+  id         String     @id @default(cuid())
+  linkCode   String     @unique
+  name       String
+  phone      String?
+  memo       String?
+  staff      Staff      @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  staffId    String
+  properties Property[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+enum DealType {
+  SALE
+  JEONSE
+  MONTHLY
+}
+
+model Property {
+  id            String         @id @default(cuid())
+  customer      Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId    String
+  dealType      DealType       @default(MONTHLY)
+  address       String
+  lat           Float?
+  lng           Float?
+  deposit       String?
+  rent          String?
+  price         String?
+  floor         String?
+  area          String?
+  roomCount     String?
+  grade1        String?
+  grade2        String?
+  memo          String?
+  photoUrl      String?
+  naverLink     String?
+  order         Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  activityLogs  ActivityLog[]
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  propertyId String
+  field      String
+  oldValue   String?
+  newValue   String?
+  createdAt  DateTime @default(now())
+}

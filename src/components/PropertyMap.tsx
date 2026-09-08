@@ -10,18 +10,28 @@ export type MapProperty = {
   label: string;
 };
 
+type KakaoLatLng = object;
+type KakaoMap = object;
+type KakaoMarker = { setMap: (map: KakaoMap | null) => void };
+
 declare global {
   interface Window {
-    naver?: {
+    kakao?: {
       maps: {
-        Map: new (el: HTMLElement, opts: Record<string, unknown>) => unknown;
-        LatLng: new (lat: number, lng: number) => unknown;
-        Marker: new (opts: Record<string, unknown>) => {
-          setMap: (map: unknown) => void;
-        };
-        Event: {
+        load: (callback: () => void) => void;
+        LatLng: new (lat: number, lng: number) => KakaoLatLng;
+        Map: new (
+          el: HTMLElement,
+          opts: { center: KakaoLatLng; level: number }
+        ) => KakaoMap;
+        Marker: new (opts: {
+          position: KakaoLatLng;
+          map: KakaoMap;
+          title?: string;
+        }) => KakaoMarker;
+        event: {
           addListener: (
-            target: unknown,
+            target: KakaoMarker,
             type: string,
             handler: () => void
           ) => void;
@@ -31,7 +41,7 @@ declare global {
   }
 }
 
-const clientId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID;
+const appKey = process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY;
 
 export default function PropertyMap({
   properties,
@@ -49,44 +59,49 @@ export default function PropertyMap({
   );
 
   useEffect(() => {
-    if (!clientId) return;
+    if (!appKey) return;
     if (withCoords.length === 0) return;
 
     const init = () => {
-      if (!window.naver || !mapRef.current) return;
-      const { naver } = window;
-      const center = new naver.maps.LatLng(
-        withCoords[0].lat,
-        withCoords[0].lng
-      );
-      const map = new naver.maps.Map(mapRef.current, {
-        center,
-        zoom: 14,
-      });
-
-      withCoords.forEach((p) => {
-        const marker = new naver.maps.Marker({
-          position: new naver.maps.LatLng(p.lat, p.lng),
-          map,
-          title: p.label,
+      if (!window.kakao || !mapRef.current) return;
+      window.kakao.maps.load(() => {
+        const { kakao } = window;
+        if (!kakao || !mapRef.current) return;
+        const center = new kakao.maps.LatLng(
+          withCoords[0].lat,
+          withCoords[0].lng
+        );
+        const map = new kakao.maps.Map(mapRef.current, {
+          center,
+          level: 5,
         });
-        naver.maps.Event.addListener(marker, "click", () => onSelect(p.id));
-      });
 
-      setStatus("ready");
+        withCoords.forEach((p) => {
+          const marker = new kakao.maps.Marker({
+            position: new kakao.maps.LatLng(p.lat, p.lng),
+            map,
+            title: p.label,
+          });
+          kakao.maps.event.addListener(marker, "click", () =>
+            onSelect(p.id)
+          );
+        });
+
+        setStatus("ready");
+      });
     };
 
-    if (window.naver) {
+    if (window.kakao) {
       init();
       return;
     }
 
-    const scriptId = "naver-maps-sdk";
+    const scriptId = "kakao-maps-sdk";
     let script = document.getElementById(scriptId) as HTMLScriptElement | null;
     if (!script) {
       script = document.createElement("script");
       script.id = scriptId;
-      script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${clientId}`;
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`;
       script.async = true;
       script.onerror = () => setStatus("error");
       document.head.appendChild(script);
@@ -96,10 +111,10 @@ export default function PropertyMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [properties.length]);
 
-  if (!clientId) {
+  if (!appKey) {
     return (
       <div className="flex h-72 items-center justify-center rounded-2xl bg-slate-100 text-center text-sm text-slate-500">
-        지도를 표시하려면 네이버 지도 API 키 설정이 필요합니다.
+        지도를 표시하려면 카카오맵 API 키 설정이 필요합니다.
         <br />
         아래 매물 목록을 확인해주세요.
       </div>

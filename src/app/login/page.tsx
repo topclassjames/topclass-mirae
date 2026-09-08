@@ -6,7 +6,7 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string; callbackUrl?: string }>;
 }) {
   const params = await searchParams;
-  const callbackUrl = params.callbackUrl || "/customers";
+  const callbackUrl = params.callbackUrl || "/";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">

@@ -31,7 +31,7 @@ async function requireAdmin() {
 export async function loginAction(formData: FormData) {
   const username = String(formData.get("username") ?? "");
   const password = String(formData.get("password") ?? "");
-  const callbackUrl = String(formData.get("callbackUrl") ?? "/customers");
+  const callbackUrl = String(formData.get("callbackUrl") ?? "/");
 
   try {
     await signIn("credentials", {

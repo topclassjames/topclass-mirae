@@ -131,12 +131,12 @@ export default async function CustomerDetailPage({
           />
           <input
             name="lat"
-            placeholder="위도 (선택)"
+            placeholder="위도 (비워두면 주소로 자동 변환)"
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
           />
           <input
             name="lng"
-            placeholder="경도 (선택)"
+            placeholder="경도 (비워두면 주소로 자동 변환)"
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
           />
           <input
@@ -259,13 +259,13 @@ export default async function CustomerDetailPage({
               <input
                 name="lat"
                 defaultValue={p.lat ?? ""}
-                placeholder="위도"
+                placeholder="위도 (비워두면 주소 변경 시 자동 변환)"
                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
               />
               <input
                 name="lng"
                 defaultValue={p.lng ?? ""}
-                placeholder="경도"
+                placeholder="경도 (비워두면 주소 변경 시 자동 변환)"
                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
               />
               <input

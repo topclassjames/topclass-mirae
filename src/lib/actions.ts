@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { customAlphabet } from "nanoid";
 import { auth, signIn, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { geocodeAddress } from "@/lib/geocode";
 
 const genCode = customAlphabet(
   "0123456789abcdefghijklmnopqrstuvwxyz",
@@ -174,6 +175,16 @@ export async function createProperty(customerId: string, formData: FormData) {
   const address = String(formData.get("address") ?? "").trim();
   if (!address) throw new Error("주소는 필수입니다.");
 
+  let lat = formData.get("lat") ? Number(formData.get("lat")) : null;
+  let lng = formData.get("lng") ? Number(formData.get("lng")) : null;
+  if (lat == null && lng == null) {
+    const geo = await geocodeAddress(address);
+    if (geo) {
+      lat = geo.lat;
+      lng = geo.lng;
+    }
+  }
+
   await prisma.property.create({
     data: {
       customerId,
@@ -190,8 +201,8 @@ export async function createProperty(customerId: string, formData: FormData) {
       memo: String(formData.get("memo") ?? "").trim() || null,
       photoUrl: String(formData.get("photoUrl") ?? "").trim() || null,
       naverLink: String(formData.get("naverLink") ?? "").trim() || null,
-      lat: formData.get("lat") ? Number(formData.get("lat")) : null,
-      lng: formData.get("lng") ? Number(formData.get("lng")) : null,
+      lat,
+      lng,
     },
   });
 
@@ -237,9 +248,28 @@ export async function updateProperty(id: string, formData: FormData) {
     }
   }
 
+  // 좌표는 activity log로 추적하지 않으므로 별도 처리:
+  // - 위/경도를 직접 입력했으면 그 값을 사용
+  // - 안 입력했고 주소가 바뀌었으면 새 주소로 재변환 (실패 시 기존 좌표 유지)
+  // - 안 입력했고 주소도 그대로면 기존 좌표를 그대로 둔다
+  const manualLat = formData.get("lat") ? Number(formData.get("lat")) : null;
+  const manualLng = formData.get("lng") ? Number(formData.get("lng")) : null;
+  const newAddress = next.address ?? existing.address;
+
+  let coords: { lat: number; lng: number } | null = null;
+  if (manualLat != null && manualLng != null) {
+    coords = { lat: manualLat, lng: manualLng };
+  } else if (newAddress !== existing.address) {
+    coords = await geocodeAddress(newAddress);
+  }
+
   await prisma.property.update({
     where: { id },
-    data: { dealType, ...next },
+    data: {
+      dealType,
+      ...next,
+      ...(coords ? { lat: coords.lat, lng: coords.lng } : {}),
+    },
   });
 
   if (logs.length > 0) {

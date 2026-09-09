@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import PropertyMap from "./PropertyMap";
+import { naverLandSearchUrl } from "@/lib/naver-link";
 
 const DEAL_TYPE_LABEL: Record<string, string> = {
   SALE: "매매",
@@ -230,16 +231,16 @@ export default function CustomerMapView({
               </p>
             )}
 
-            {selected.naverLink && (
-              <a
-                href={selected.naverLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 block w-full rounded-xl bg-blue-600 py-2.5 text-center text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                네이버부동산에서 상세보기
-              </a>
-            )}
+            <a
+              href={selected.naverLink || naverLandSearchUrl(selected.address)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 block w-full rounded-xl bg-blue-600 py-2.5 text-center text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              {selected.naverLink
+                ? "네이버부동산에서 상세보기"
+                : "네이버부동산에서 검색해보기"}
+            </a>
             {staffPhone && (
               <a
                 href={`tel:${staffPhone}`}
